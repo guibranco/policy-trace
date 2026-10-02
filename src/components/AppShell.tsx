@@ -12,7 +12,7 @@ import {
   User,
   X,
 } from "lucide-react";
-import { useAppContext } from "../context/AppContext";
+import { useAppContext } from "../context/useAppContext";
 import {
   ConfirmActionDialog,
   EditRetryModal,
@@ -67,16 +67,22 @@ export const AppShell: React.FC<{ children: React.ReactNode }> = ({
   const [editingOperator, setEditingOperator] = useState(false);
   const [operatorDraft, setOperatorDraft] = useState(operatorName);
 
-  useEffect(() => {
+  // Sync the search box with the URL and the operator draft with the stored
+  // name, adjusting state during render rather than in effects.
+  const [prevPathname, setPrevPathname] = useState(location.pathname);
+  if (prevPathname !== location.pathname) {
+    setPrevPathname(location.pathname);
     if (currentPolicyMatch) {
       setSearchValue(decodeURIComponent(currentPolicyMatch[1]));
       setValidationError(null);
     }
-  }, [location.pathname]);
+  }
 
-  useEffect(() => {
+  const [prevOperatorName, setPrevOperatorName] = useState(operatorName);
+  if (prevOperatorName !== operatorName) {
+    setPrevOperatorName(operatorName);
     setOperatorDraft(operatorName);
-  }, [operatorName]);
+  }
 
   // Global keyboard shortcuts: `/` focuses search, `Esc` closes drawers/modals
   useEffect(() => {
@@ -149,7 +155,7 @@ export const AppShell: React.FC<{ children: React.ReactNode }> = ({
     const trimmed = searchValue.trim().toUpperCase();
     if (!validatePolicy(trimmed)) return;
     setSearchValue(trimmed);
-    navigate(`/policy/${encodeURIComponent(trimmed)}`);
+    void navigate(`/policy/${encodeURIComponent(trimmed)}`);
   };
 
   const handleOperatorSave = (e: React.FormEvent) => {
@@ -176,7 +182,9 @@ export const AppShell: React.FC<{ children: React.ReactNode }> = ({
           <div className="flex items-center gap-3 shrink-0">
             <button
               type="button"
-              onClick={() => navigate(`/policy/${activePolicyNumber}`)}
+              onClick={() => {
+                void navigate(`/policy/${activePolicyNumber}`);
+              }}
               className="text-base font-bold tracking-tight text-white cursor-pointer whitespace-nowrap"
             >
               PolicyTrace
@@ -392,7 +400,9 @@ export const AppShell: React.FC<{ children: React.ReactNode }> = ({
                   key={p.id}
                   type="button"
                   data-testid={`quick-policy-${p.id}`}
-                  onClick={() => navigate(`/policy/${p.id}`)}
+                  onClick={() => {
+                    void navigate(`/policy/${p.id}`);
+                  }}
                   className={`w-full text-left px-2.5 py-1.5 rounded border text-xs transition-colors cursor-pointer ${
                     activePolicyNumber === p.id &&
                     location.pathname.startsWith("/policy/")
@@ -455,7 +465,9 @@ export const AppShell: React.FC<{ children: React.ReactNode }> = ({
           messages={confirmDialogState.messages}
           config={config}
           isSubmitting={isSubmittingAction}
-          onConfirm={executeConfirmedAction}
+          onConfirm={() => {
+            void executeConfirmedAction();
+          }}
           onCancel={cancelActionModals}
         />
       )}
@@ -466,7 +478,9 @@ export const AppShell: React.FC<{ children: React.ReactNode }> = ({
           message={editRetryState.detail}
           config={config}
           isSubmitting={isSubmittingAction}
-          onSubmit={executeEditRetryAction}
+          onSubmit={(id, body, headers) => {
+            void executeEditRetryAction(id, body, headers);
+          }}
           onCancel={cancelActionModals}
         />
       )}

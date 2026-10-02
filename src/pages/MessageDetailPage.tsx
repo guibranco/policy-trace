@@ -2,7 +2,7 @@ import React from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { ChevronLeft } from "lucide-react";
 import { MessageDetailView } from "../components/MessageDetailView";
-import { useAppContext } from "../context/AppContext";
+import { useAppContext } from "../context/useAppContext";
 
 export const MessageDetailPage: React.FC = () => {
   const { id = "" } = useParams<{ id: string }>();

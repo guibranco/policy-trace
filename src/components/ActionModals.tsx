@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
   AlertTriangle,
   Archive,
@@ -40,9 +40,13 @@ export const OperatorPromptModal: React.FC<{
 }> = ({ isOpen, onSave, onCancel }) => {
   const [name, setName] = useState("");
 
-  useEffect(() => {
+  // Clear the input each time the modal opens (adjusted during render rather
+  // than in an effect).
+  const [prevIsOpen, setPrevIsOpen] = useState(isOpen);
+  if (prevIsOpen !== isOpen) {
+    setPrevIsOpen(isOpen);
     if (isOpen) setName("");
-  }, [isOpen]);
+  }
 
   if (!isOpen) return null;
 
@@ -144,9 +148,13 @@ export const ConfirmActionDialog: React.FC<{
 }) => {
   const [prodConfirmText, setProdConfirmText] = useState("");
 
-  useEffect(() => {
+  // Clear the confirmation text each time the dialog opens (adjusted during
+  // render rather than in an effect).
+  const [prevIsOpen, setPrevIsOpen] = useState(isOpen);
+  if (prevIsOpen !== isOpen) {
+    setPrevIsOpen(isOpen);
     if (isOpen) setProdConfirmText("");
-  }, [isOpen]);
+  }
 
   const typeCounts = useMemo(() => {
     const counts = new Map<string, number>();
@@ -324,7 +332,19 @@ export const EditRetryModal: React.FC<{
   const [step, setStep] = useState<"edit" | "diff">("edit");
   const [prodConfirm, setProdConfirm] = useState("");
 
-  useEffect(() => {
+  // (Re)initialise the editor from the message whenever it opens or the
+  // message changes, including on mount. Adjusted during render rather than
+  // in an effect; `null` forces the first render to initialise.
+  const [prevSync, setPrevSync] = useState<{
+    isOpen: boolean;
+    message: MessageDetail | null;
+  } | null>(null);
+  if (
+    !prevSync ||
+    prevSync.isOpen !== isOpen ||
+    prevSync.message !== message
+  ) {
+    setPrevSync({ isOpen, message });
     if (isOpen && message) {
       setEditedBody(message.body || "{}");
       const lockedSet = new Set(message.lockedHeaders || []);
@@ -339,7 +359,7 @@ export const EditRetryModal: React.FC<{
       setNewHeaderVal("");
       setProdConfirm("");
     }
-  }, [isOpen, message]);
+  }
 
   const jsonValidation = useMemo(() => {
     if (!editedBody.trim()) {
@@ -823,35 +843,58 @@ export const PivotLogsModal: React.FC<{
   onClose: () => void;
 }> = ({ filter, onClose }) => {
   const [logs, setLogs] = useState<LogEvent[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(filter !== null);
   const [error, setError] = useState<ReturnType<typeof extractProblemDetails> | null>(
     null
   );
   const [expandedLogId, setExpandedLogId] = useState<string | null>(null);
 
-  const fetchPivotLogs = async () => {
-    if (!filter) return;
-    setLoading(true);
-    setError(null);
-    try {
-      const data = await getLogs({
-        requestId: filter.requestId,
-        sessionId: filter.sessionId,
-        includeNoise: true,
-      });
-      setLogs(data);
-    } catch (e) {
-      setError(extractProblemDetails(e));
-    } finally {
-      setLoading(false);
+  // Enter the loading state during render when a new filter arrives, instead
+  // of synchronously inside the fetch effect.
+  const [prevFilter, setPrevFilter] = useState(filter);
+  if (prevFilter !== filter) {
+    setPrevFilter(filter);
+    if (filter) {
+      setLoading(true);
+      setError(null);
     }
-  };
+  }
+
+  // State is only updated from promise callbacks, so this is safe to start
+  // from an effect.
+  const loadPivotLogs = useCallback(
+    (f: { requestId?: string; sessionId?: string }) =>
+      getLogs({
+        requestId: f.requestId,
+        sessionId: f.sessionId,
+        includeNoise: true,
+      })
+        .then(
+          (data) => {
+            setLogs(data);
+          },
+          (e: unknown) => {
+            setError(extractProblemDetails(e));
+          }
+        )
+        .finally(() => {
+          setLoading(false);
+        }),
+    []
+  );
 
   useEffect(() => {
     if (filter) {
-      fetchPivotLogs();
+      void loadPivotLogs(filter);
     }
-  }, [filter]);
+  }, [filter, loadPivotLogs]);
+
+  const fetchPivotLogs = () => {
+    if (!filter) return;
+    setLoading(true);
+    setError(null);
+    void loadPivotLogs(filter);
+  };
 
   if (!filter) return null;
 

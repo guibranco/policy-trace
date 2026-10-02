@@ -13,7 +13,7 @@ import {
 import { getSaga } from "../api/client";
 import { type SagaHistory, type SagaMessage } from "../api/types";
 import { CopyButton, EmptyState, ErrorState, SkeletonRows } from "../components/Common";
-import { useAppContext } from "../context/AppContext";
+import { useAppContext } from "../context/useAppContext";
 import {
   extractProblemDetails,
   formatLocalTime,

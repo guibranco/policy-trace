@@ -18,7 +18,7 @@ import {
   StatusBadge,
   TimestampCell,
 } from "../components/Common";
-import { useAppContext } from "../context/AppContext";
+import { useAppContext } from "../context/useAppContext";
 import { extractProblemDetails, shortTypeName } from "../utils/format";
 
 const ALL_STATUSES: MessageStatus[] = [
@@ -40,6 +40,14 @@ export const MessagesPage: React.FC = () => {
     refreshVersion,
   } = useAppContext();
 
+  // Data state
+  const [pagedData, setPagedData] = useState<Paged<MessageSummary> | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<ReturnType<typeof extractProblemDetails> | null>(null);
+
+  // Bulk selection
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+
   // Read URL query params
   const endpoint = searchParams.get("endpoint") || "";
   const rawStatus = searchParams.get("status") || "";
@@ -55,14 +63,6 @@ export const MessagesPage: React.FC = () => {
   const pageSize = parseInt(searchParams.get("pageSize") || "20", 10) || 20;
   const sort = searchParams.get("sort") || "timeSent";
   const direction = searchParams.get("direction") || "desc";
-
-  // Data state
-  const [pagedData, setPagedData] = useState<Paged<MessageSummary> | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<ReturnType<typeof extractProblemDetails> | null>(null);
-
-  // Bulk selection
-  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
   // Local search draft
   const [searchDraft, setSearchDraft] = useState(q);

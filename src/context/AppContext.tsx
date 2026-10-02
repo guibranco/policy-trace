@@ -1,10 +1,4 @@
-import React, {
-  createContext,
-  useCallback,
-  useContext,
-  useEffect,
-  useState,
-} from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import {
   archiveMessage,
   archiveMessages,
@@ -25,65 +19,14 @@ import {
   type MessageSummary,
 } from "../api/types";
 import { extractProblemDetails } from "../utils/format";
+import { AppContext, type ToastNotice } from "./useAppContext";
 
-export interface ToastNotice {
-  id: string;
-  title: string;
-  accepted: number;
-  requested: number;
-  failures: Array<{ id: string; reason: string }>;
-  isError?: boolean;
-}
+export type { ToastNotice } from "./useAppContext";
 
 interface PendingActionState {
   type: "retry" | "archive" | "unarchive" | "editRetry";
   messages: MessageSummary[];
   detail?: MessageDetail;
-}
-
-interface AppContextValue {
-  config: AppConfig;
-  endpoints: string[];
-  operatorName: string;
-  updateOperatorName: (name: string) => void;
-  theme: "light" | "dark";
-  toggleTheme: () => void;
-  drawerMessageId: string | null;
-  openMessageDrawer: (id: string) => void;
-  closeMessageDrawer: () => void;
-  pivotLogFilter: { requestId?: string; sessionId?: string } | null;
-  openPivotLogs: (filter: { requestId?: string; sessionId?: string }) => void;
-  closePivotLogs: () => void;
-  triggerAction: (
-    type: "retry" | "archive" | "unarchive" | "editRetry",
-    messages: MessageSummary[],
-    detail?: MessageDetail
-  ) => void;
-  refreshVersion: number;
-  notifyDataChanged: () => void;
-  toasts: ToastNotice[];
-  dismissToast: (id: string) => void;
-  // Modal states exposed for AppShell
-  operatorPromptOpen: boolean;
-  handleOperatorPromptSubmit: (name: string) => void;
-  handleOperatorPromptCancel: () => void;
-  confirmDialogState: {
-    isOpen: boolean;
-    type: "retry" | "archive" | "unarchive";
-    messages: MessageSummary[];
-  } | null;
-  editRetryState: {
-    isOpen: boolean;
-    detail: MessageDetail;
-  } | null;
-  isSubmittingAction: boolean;
-  executeConfirmedAction: () => Promise<void>;
-  executeEditRetryAction: (
-    id: string,
-    body: string,
-    headers: Record<string, string>
-  ) => Promise<void>;
-  cancelActionModals: () => void;
 }
 
 const DEFAULT_CONFIG: AppConfig = {
@@ -103,8 +46,6 @@ const DEFAULT_CONFIG: AppConfig = {
     baseUrl: "https://jira.stratos-insure.internal",
   },
 };
-
-const AppContext = createContext<AppContextValue | null>(null);
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
@@ -276,7 +217,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
         setOperatorPromptOpen(true);
         return;
       }
-      openSpecificModal(nextAction);
+      void openSpecificModal(nextAction);
     },
     [openSpecificModal]
   );
@@ -288,7 +229,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
       if (pendingAction) {
         const act = pendingAction;
         setPendingAction(null);
-        openSpecificModal(act);
+        void openSpecificModal(act);
       }
     },
     [pendingAction, updateOperatorName, openSpecificModal]
@@ -423,9 +364,3 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
     </AppContext.Provider>
   );
 };
-
-export function useAppContext(): AppContextValue {
-  const ctx = useContext(AppContext);
-  if (!ctx) throw new Error("useAppContext must be used inside AppProvider");
-  return ctx;
-}

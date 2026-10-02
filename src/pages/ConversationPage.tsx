@@ -5,7 +5,7 @@ import { getConversation } from "../api/client";
 import { type ConversationGraph } from "../api/types";
 import { CopyButton, ErrorState, SkeletonRows } from "../components/Common";
 import { ConversationDiagram } from "../components/ConversationDiagram";
-import { useAppContext } from "../context/AppContext";
+import { useAppContext } from "../context/useAppContext";
 import { extractProblemDetails } from "../utils/format";
 
 export const ConversationPage: React.FC = () => {

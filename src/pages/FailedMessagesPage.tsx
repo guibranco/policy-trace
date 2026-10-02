@@ -15,7 +15,7 @@ import {
   StatusBadge,
   TimestampCell,
 } from "../components/Common";
-import { useAppContext } from "../context/AppContext";
+import { useAppContext } from "../context/useAppContext";
 import { extractProblemDetails, shortTypeName } from "../utils/format";
 
 type FailedTab = "unresolved" | "retryIssued" | "archived";
