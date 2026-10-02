@@ -14,10 +14,10 @@ import {
 } from "lucide-react";
 import { getLogs } from "../api/client";
 import {
-  AppConfig,
-  LogEvent,
-  MessageDetail,
-  MessageSummary,
+  type AppConfig,
+  type LogEvent,
+  type MessageDetail,
+  type MessageSummary,
 } from "../api/types";
 import {
   extractProblemDetails,

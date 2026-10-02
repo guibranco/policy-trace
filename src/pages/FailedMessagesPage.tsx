@@ -1,18 +1,14 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
   Archive,
-  ArrowDownUp,
   ChevronDown,
   ChevronRight,
-  Filter,
-  Layers,
   RefreshCw,
   Search,
 } from "lucide-react";
 import { getMessages } from "../api/client";
-import { MessageStatus, MessageSummary } from "../api/types";
+import { type MessageStatus, type MessageSummary } from "../api/types";
 import {
-  CopyButton,
   EmptyState,
   ErrorState,
   SkeletonRows,

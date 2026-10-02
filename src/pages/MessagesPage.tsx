@@ -5,15 +5,13 @@ import {
   ArrowDownUp,
   ChevronLeft,
   ChevronRight,
-  Filter,
   GitBranch,
   RefreshCw,
   Search,
 } from "lucide-react";
 import { getMessages } from "../api/client";
-import { MessageStatus, MessageSummary, Paged } from "../api/types";
+import { type MessageStatus, type MessageSummary, type Paged } from "../api/types";
 import {
-  CopyButton,
   EmptyState,
   ErrorState,
   SkeletonRows,
@@ -36,7 +34,6 @@ export const MessagesPage: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
   const {
-    config,
     endpoints,
     openMessageDrawer,
     triggerAction,

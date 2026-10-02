@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { ChevronLeft, GitBranch, RefreshCw } from "lucide-react";
 import { getConversation } from "../api/client";
-import { ConversationGraph } from "../api/types";
+import { type ConversationGraph } from "../api/types";
 import { CopyButton, ErrorState, SkeletonRows } from "../components/Common";
 import { ConversationDiagram } from "../components/ConversationDiagram";
 import { useAppContext } from "../context/AppContext";

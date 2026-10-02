@@ -1,4 +1,4 @@
-import { ProblemDetails } from "../api/types";
+import { type ProblemDetails } from "../api/types";
 
 export function shortTypeName(fullType: string | null | undefined): string {
   if (!fullType) return "Unknown";

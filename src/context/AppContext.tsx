@@ -19,10 +19,10 @@ import {
   unarchiveMessage,
 } from "../api/client";
 import {
-  ActionResult,
-  AppConfig,
-  MessageDetail,
-  MessageSummary,
+  type ActionResult,
+  type AppConfig,
+  type MessageDetail,
+  type MessageSummary,
 } from "../api/types";
 import { extractProblemDetails } from "../utils/format";
 

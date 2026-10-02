@@ -15,17 +15,17 @@ import {
   mockUnarchiveMessage,
 } from "./mock";
 import {
-  ActionResult,
-  AppConfig,
-  ConversationGraph,
-  LogEvent,
-  LookupResult,
-  MessageDetail,
-  MessageSummary,
-  Paged,
-  ProblemDetails,
-  RelatedTicketsResult,
-  SagaHistory,
+  type ActionResult,
+  type AppConfig,
+  type ConversationGraph,
+  type LogEvent,
+  type LookupResult,
+  type MessageDetail,
+  type MessageSummary,
+  type Paged,
+  type ProblemDetails,
+  type RelatedTicketsResult,
+  type SagaHistory,
 } from "./types";
 
 export const USE_MOCK = true;

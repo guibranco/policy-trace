@@ -12,7 +12,7 @@ import {
   Terminal,
   XCircle,
 } from "lucide-react";
-import { MessageStatus, ProblemDetails } from "../api/types";
+import { type MessageStatus, type ProblemDetails } from "../api/types";
 import {
   formatLocalTime,
   formatRelativeTime,

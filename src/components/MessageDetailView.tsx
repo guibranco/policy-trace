@@ -18,12 +18,12 @@ import {
   getRelatedTickets,
 } from "../api/client";
 import {
-  AppConfig,
-  ConversationGraph,
-  LogEvent,
-  MessageDetail,
-  MessageSummary,
-  RelatedTicketsResult,
+  type AppConfig,
+  type ConversationGraph,
+  type LogEvent,
+  type MessageDetail,
+  type MessageSummary,
+  type RelatedTicketsResult,
 } from "../api/types";
 import {
   extractProblemDetails,

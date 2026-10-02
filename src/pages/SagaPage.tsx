@@ -1,20 +1,17 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import {
-  ArrowRight,
-  CheckCircle2,
   ChevronDown,
   ChevronLeft,
   ChevronRight,
   Clock,
-  CornerDownRight,
   Radio,
   RefreshCw,
   Send,
   Workflow,
 } from "lucide-react";
 import { getSaga } from "../api/client";
-import { SagaHistory, SagaMessage } from "../api/types";
+import { type SagaHistory, type SagaMessage } from "../api/types";
 import { CopyButton, EmptyState, ErrorState, SkeletonRows } from "../components/Common";
 import { useAppContext } from "../context/AppContext";
 import {
@@ -100,7 +97,7 @@ export const SagaPage: React.FC = () => {
 
   const renderMessageCard = (
     msg: SagaMessage,
-    isInitiator: boolean
+    _isInitiator: boolean
   ) => {
     return (
       <div

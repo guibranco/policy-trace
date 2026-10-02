@@ -7,9 +7,7 @@ import {
   CheckCircle2,
   ChevronDown,
   ChevronRight,
-  Database,
   ExternalLink,
-  Filter,
   GitBranch,
   GitCommit,
   Layers,
@@ -21,11 +19,11 @@ import {
 } from "lucide-react";
 import { getRelatedTickets, lookupPolicy } from "../api/client";
 import {
-  LogEvent,
-  LookupResult,
-  MessageSummary,
-  RelatedTicket,
-  RelatedTicketsResult,
+  type LogEvent,
+  type LookupResult,
+  type MessageSummary,
+  type RelatedTicket,
+  type RelatedTicketsResult,
 } from "../api/types";
 import {
   CopyButton,
