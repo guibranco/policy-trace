@@ -1,4 +1,3 @@
-import React from "react";
 import { describe, it, expect, vi } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/react";
 import {
@@ -15,7 +14,7 @@ import {
   RelatedTicketsPanel,
   TicketCard,
 } from "../src/components/RelatedTicketsPanel";
-import { RelatedTicket, RelatedTicketsResult } from "../src/api/types";
+import { type RelatedTicket, type RelatedTicketsResult } from "../src/api/types";
 
 describe("Common Components", () => {
   describe("StatusBadge", () => {

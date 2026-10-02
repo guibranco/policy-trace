@@ -2,12 +2,12 @@ import React, { useMemo, useState } from "react";
 import {
   Background,
   Controls,
-  Edge,
+  type Edge,
   Handle,
   MarkerType,
   MiniMap,
-  Node,
-  NodeProps,
+  type Node,
+  type NodeProps,
   Position,
   ReactFlow,
 } from "@xyflow/react";
@@ -20,7 +20,7 @@ import {
   Send,
   Workflow,
 } from "lucide-react";
-import { ConversationGraph, MessageStatus } from "../api/types";
+import { type ConversationGraph, type MessageStatus } from "../api/types";
 import { formatShortTime, shortTypeName } from "../utils/format";
 import { StatusBadge } from "./Common";
 

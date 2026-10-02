@@ -10,7 +10,7 @@ import {
   Tag,
   User,
 } from "lucide-react";
-import { RelatedTicket, RelatedTicketsResult } from "../api/types";
+import { type RelatedTicket, type RelatedTicketsResult } from "../api/types";
 import { formatLocalTime, formatRelativeTime } from "../utils/format";
 import { EmptyState, SkeletonRows } from "./Common";
 

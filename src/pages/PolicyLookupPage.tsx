@@ -7,9 +7,7 @@ import {
   CheckCircle2,
   ChevronDown,
   ChevronRight,
-  Database,
   ExternalLink,
-  Filter,
   GitBranch,
   GitCommit,
   Layers,
@@ -21,11 +19,11 @@ import {
 } from "lucide-react";
 import { getRelatedTickets, lookupPolicy } from "../api/client";
 import {
-  LogEvent,
-  LookupResult,
-  MessageSummary,
-  RelatedTicket,
-  RelatedTicketsResult,
+  type LogEvent,
+  type LookupResult,
+  type MessageSummary,
+  type RelatedTicket,
+  type RelatedTicketsResult,
 } from "../api/types";
 import {
   CopyButton,
@@ -37,7 +35,7 @@ import {
   TimestampCell,
 } from "../components/Common";
 import { RelatedTicketsPanel } from "../components/RelatedTicketsPanel";
-import { useAppContext } from "../context/AppContext";
+import { useAppContext } from "../context/useAppContext";
 import {
   extractProblemDetails,
   formatLocalTime,
@@ -92,7 +90,7 @@ export const PolicyLookupPage: React.FC = () => {
   const [ticketsData, setTicketsData] = useState<RelatedTicketsResult | null>(
     null
   );
-  const [ticketsLoading, setTicketsLoading] = useState(false);
+  const [ticketsLoading, setTicketsLoading] = useState(config.jira.enabled);
   const [showTicketsOnTimeline, setShowTicketsOnTimeline] = useState(false);
 
   // Mobile/Tablet Tab Switcher ("timeline" | "tickets")
@@ -135,56 +133,116 @@ export const PolicyLookupPage: React.FC = () => {
     };
   }, [preset, customFrom, customTo]);
 
-  const fetchTimeline = useCallback(async () => {
+  // Reset to the loading state during render whenever the lookup inputs or the
+  // global refresh token change, instead of synchronously inside the effects.
+  const timelineKey = JSON.stringify([
+    policyNumber,
+    preset,
+    customFrom,
+    customTo,
+    includeNoise,
+    refreshVersion,
+  ]);
+  const [prevTimelineKey, setPrevTimelineKey] = useState(timelineKey);
+  if (prevTimelineKey !== timelineKey) {
+    setPrevTimelineKey(timelineKey);
     setLoading(true);
     setError(null);
-    try {
-      const { from, to } = computeTimeWindow();
-      const res = await lookupPolicy(policyNumber, {
-        from,
-        to,
-        includeNoise,
-      });
-      setLookupData(res);
-    } catch (e) {
-      setError(extractProblemDetails(e));
-    } finally {
-      setLoading(false);
-    }
-  }, [policyNumber, computeTimeWindow, includeNoise]);
+  }
 
-  const fetchJiraTickets = useCallback(async () => {
+  const ticketsKey = JSON.stringify([
+    policyNumber,
+    preset,
+    customFrom,
+    customTo,
+    config.jira.enabled,
+  ]);
+  const [prevTicketsKey, setPrevTicketsKey] = useState(ticketsKey);
+  if (prevTicketsKey !== ticketsKey) {
+    setPrevTicketsKey(ticketsKey);
+    if (config.jira.enabled) setTicketsLoading(true);
+  }
+
+  // State is only updated from promise callbacks (computeTimeWindow runs
+  // inside the chain so an invalid custom range still surfaces as an error),
+  // so these are safe to start from an effect.
+  const loadTimeline = useCallback(
+    () =>
+      Promise.resolve()
+        .then(() => {
+          const { from, to } = computeTimeWindow();
+          return lookupPolicy(policyNumber, {
+            from,
+            to,
+            includeNoise,
+          });
+        })
+        .then(
+          (res) => {
+            setLookupData(res);
+          },
+          (e: unknown) => {
+            setError(extractProblemDetails(e));
+          }
+        )
+        .finally(() => {
+          setLoading(false);
+        }),
+    [policyNumber, computeTimeWindow, includeNoise]
+  );
+
+  const loadJiraTickets = useCallback(
+    () =>
+      Promise.resolve()
+        .then(() => {
+          const { from, to } = computeTimeWindow();
+          return getRelatedTickets({
+            policyNumber,
+            from,
+            to,
+          });
+        })
+        .then(
+          (res) => {
+            setTicketsData(res);
+          },
+          (e: unknown) => {
+            const prob = extractProblemDetails(e);
+            setTicketsData({
+              enabled: true,
+              ok: false,
+              error: prob.detail,
+              tickets: [],
+              truncated: false,
+            });
+          }
+        )
+        .finally(() => {
+          setTicketsLoading(false);
+        }),
+    [policyNumber, computeTimeWindow]
+  );
+
+  useEffect(() => {
+    void loadTimeline();
+  }, [loadTimeline, refreshVersion]);
+
+  useEffect(() => {
+    if (!config.jira.enabled) return;
+    void loadJiraTickets();
+  }, [loadJiraTickets, config.jira.enabled]);
+
+  const fetchTimeline = () => {
+    setLoading(true);
+    setError(null);
+    void loadTimeline();
+  };
+
+  const fetchJiraTickets = () => {
     if (!config.jira.enabled) return;
     setTicketsLoading(true);
-    try {
-      const { from, to } = computeTimeWindow();
-      const res = await getRelatedTickets({
-        policyNumber,
-        from,
-        to,
-      });
-      setTicketsData(res);
-    } catch (e) {
-      const prob = extractProblemDetails(e);
-      setTicketsData({
-        enabled: true,
-        ok: false,
-        error: prob.detail,
-        tickets: [],
-        truncated: false,
-      });
-    } finally {
-      setTicketsLoading(false);
-    }
-  }, [policyNumber, computeTimeWindow, config.jira.enabled]);
-
-  useEffect(() => {
-    fetchTimeline();
-  }, [fetchTimeline, refreshVersion]);
-
-  useEffect(() => {
-    fetchJiraTickets();
-  }, [fetchJiraTickets]);
+    void loadJiraTickets();
+  };
 
   // Summary counts
   const summaryStats = useMemo(() => {
@@ -871,7 +929,9 @@ export const PolicyLookupPage: React.FC = () => {
                     key={cId}
                     type="button"
                     data-testid={`summary-conv-link-${cId}`}
-                    onClick={() => navigate(`/conversations/${cId}`)}
+                    onClick={() => {
+                      void navigate(`/conversations/${cId}`);
+                    }}
                     className="inline-flex items-center gap-1 font-mono text-xs text-brand-purple hover:underline cursor-pointer"
                   >
                     <GitBranch className="w-3 h-3" />
@@ -1131,9 +1191,9 @@ export const PolicyLookupPage: React.FC = () => {
                         <button
                           type="button"
                           data-testid={`open-flow-diagram-${grp.conversationId}`}
-                          onClick={() =>
-                            navigate(`/conversations/${grp.conversationId}`)
-                          }
+                          onClick={() => {
+                            void navigate(`/conversations/${grp.conversationId}`);
+                          }}
                           className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded bg-brand-purple hover:bg-brand-purple-dark text-text-on-purple cursor-pointer whitespace-nowrap"
                         >
                           <GitBranch className="w-3.5 h-3.5" />
@@ -1278,7 +1338,7 @@ export const PolicyLookupPage: React.FC = () => {
                               type="button"
                               onClick={(e) => {
                                 e.stopPropagation();
-                                navigate(`/sagas/${msg.sagaIds[0]}`);
+                                void navigate(`/sagas/${msg.sagaIds[0]}`);
                               }}
                               className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-mono font-semibold cursor-pointer shrink-0"
                               style={{

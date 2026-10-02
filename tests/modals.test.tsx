@@ -1,4 +1,3 @@
-import React from "react";
 import { describe, it, expect, vi } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/react";
 import {
@@ -6,7 +5,7 @@ import {
   ConfirmActionDialog,
   EditRetryModal,
 } from "../src/components/ActionModals";
-import { AppConfig, MessageDetail, MessageSummary } from "../src/api/types";
+import { type AppConfig, type MessageDetail, type MessageSummary } from "../src/api/types";
 
 const mockConfig: AppConfig = {
   environmentName: "INT",

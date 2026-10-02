@@ -12,7 +12,7 @@ import {
   Terminal,
   XCircle,
 } from "lucide-react";
-import { MessageStatus, ProblemDetails } from "../api/types";
+import { type MessageStatus, type ProblemDetails } from "../api/types";
 import {
   formatLocalTime,
   formatRelativeTime,
@@ -226,7 +226,7 @@ export const CopyButton: React.FC<{
 
   const handleCopy = (e: React.MouseEvent) => {
     e.stopPropagation();
-    navigator.clipboard?.writeText(value);
+    void navigator.clipboard?.writeText(value);
     setCopied(true);
     setTimeout(() => setCopied(false), 1500);
   };

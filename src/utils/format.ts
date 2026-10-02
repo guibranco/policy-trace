@@ -1,4 +1,4 @@
-import { ProblemDetails } from "../api/types";
+import { type ProblemDetails } from "../api/types";
 
 export function shortTypeName(fullType: string | null | undefined): string {
   if (!fullType) return "Unknown";
@@ -90,9 +90,12 @@ export function extractProblemDetails(err: unknown): ProblemDetails {
       };
     }
   }
+  // Anything reaching this point is typically a thrown primitive; String() is
+  // kept for exact parity with previous output for any other value.
+  const thrown = err as string | number | boolean | bigint | symbol;
   return {
     title: "Unexpected Error",
-    detail: String(err || "Unknown error"),
+    detail: thrown ? String(thrown) : "Unknown error",
     status: 500,
   };
 }

@@ -1,11 +1,10 @@
-import React from "react";
 import { describe, it, expect, vi } from "vitest";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { ConversationDiagram } from "../src/components/ConversationDiagram";
 import { SagaPage } from "../src/pages/SagaPage";
 import { AppProvider } from "../src/context/AppContext";
-import { ConversationGraph } from "../src/api/types";
+import { type ConversationGraph } from "../src/api/types";
 
 const mockGraph: ConversationGraph = {
   conversationId: "conv-test-1",

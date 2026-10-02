@@ -1,11 +1,11 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { ChevronLeft, GitBranch, RefreshCw } from "lucide-react";
 import { getConversation } from "../api/client";
-import { ConversationGraph } from "../api/types";
+import { type ConversationGraph } from "../api/types";
 import { CopyButton, ErrorState, SkeletonRows } from "../components/Common";
 import { ConversationDiagram } from "../components/ConversationDiagram";
-import { useAppContext } from "../context/AppContext";
+import { useAppContext } from "../context/useAppContext";
 import { extractProblemDetails } from "../utils/format";
 
 export const ConversationPage: React.FC = () => {
@@ -17,22 +17,46 @@ export const ConversationPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<ReturnType<typeof extractProblemDetails> | null>(null);
 
-  const fetchGraph = async () => {
+  // Reset to the loading state during render whenever the conversation or the
+  // global refresh token changes, instead of synchronously inside the effect.
+  const [prevDeps, setPrevDeps] = useState({ conversationId, refreshVersion });
+  if (
+    prevDeps.conversationId !== conversationId ||
+    prevDeps.refreshVersion !== refreshVersion
+  ) {
+    setPrevDeps({ conversationId, refreshVersion });
     setLoading(true);
     setError(null);
-    try {
-      const g = await getConversation(conversationId);
-      setGraph(g);
-    } catch (e) {
-      setError(extractProblemDetails(e));
-    } finally {
-      setLoading(false);
-    }
-  };
+  }
+
+  // State is only updated from promise callbacks, so this is safe to start
+  // from an effect.
+  const loadGraph = useCallback(
+    () =>
+      getConversation(conversationId)
+        .then(
+          (g) => {
+            setGraph(g);
+          },
+          (e: unknown) => {
+            setError(extractProblemDetails(e));
+          }
+        )
+        .finally(() => {
+          setLoading(false);
+        }),
+    [conversationId]
+  );
 
   useEffect(() => {
-    fetchGraph();
-  }, [conversationId, refreshVersion]);
+    void loadGraph();
+  }, [loadGraph, refreshVersion]);
+
+  const fetchGraph = () => {
+    setLoading(true);
+    setError(null);
+    void loadGraph();
+  };
 
   return (
     <div className="p-5 max-w-[1600px] mx-auto space-y-4">
@@ -41,7 +65,9 @@ export const ConversationPage: React.FC = () => {
         <div className="flex items-center gap-3">
           <button
             type="button"
-            onClick={() => navigate(-1)}
+            onClick={() => {
+              void navigate(-1);
+            }}
             className="p-1 rounded hover:bg-surface-hover text-text-secondary cursor-pointer"
             title="Go back"
           >
@@ -74,7 +100,9 @@ export const ConversationPage: React.FC = () => {
         <ConversationDiagram
           graph={graph}
           onSelectMessage={(id) => openMessageDrawer(id)}
-          onSelectSaga={(sId) => navigate(`/sagas/${sId}`)}
+          onSelectSaga={(sId) => {
+            void navigate(`/sagas/${sId}`);
+          }}
           heightClass="h-[750px]"
         />
       ) : null}

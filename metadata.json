@@ -1,6 +1,0 @@
-{
-  "name": "PolicyTrace",
-  "description": "Internal support tool for insurance software engineers to search Seq logs and NServiceBus messages by policy number, inspect conversation flows and sagas, correlate Jira tickets, and manage failed messages.",
-  "requestFramePermissions": [],
-  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
-}

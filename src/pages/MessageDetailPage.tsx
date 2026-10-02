@@ -2,7 +2,7 @@ import React from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { ChevronLeft } from "lucide-react";
 import { MessageDetailView } from "../components/MessageDetailView";
-import { useAppContext } from "../context/AppContext";
+import { useAppContext } from "../context/useAppContext";
 
 export const MessageDetailPage: React.FC = () => {
   const { id = "" } = useParams<{ id: string }>();
@@ -14,7 +14,9 @@ export const MessageDetailPage: React.FC = () => {
       <div className="flex items-center gap-2">
         <button
           type="button"
-          onClick={() => navigate(-1)}
+          onClick={() => {
+            void navigate(-1);
+          }}
           className="inline-flex items-center gap-1 text-xs font-medium text-text-secondary hover:text-text-primary cursor-pointer"
         >
           <ChevronLeft className="w-4 h-4" />
@@ -28,7 +30,9 @@ export const MessageDetailPage: React.FC = () => {
           config={config}
           isDrawer={false}
           refreshToken={refreshVersion}
-          onSelectMessage={(newId) => navigate(`/messages/${newId}`)}
+          onSelectMessage={(newId) => {
+            void navigate(`/messages/${newId}`);
+          }}
           onTriggerAction={triggerAction}
           onOpenPivotLogs={openPivotLogs}
         />

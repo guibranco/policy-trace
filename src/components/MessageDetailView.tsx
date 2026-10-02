@@ -1,4 +1,10 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useEffectEvent,
+  useMemo,
+  useState,
+} from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Archive,
@@ -18,12 +24,12 @@ import {
   getRelatedTickets,
 } from "../api/client";
 import {
-  AppConfig,
-  ConversationGraph,
-  LogEvent,
-  MessageDetail,
-  MessageSummary,
-  RelatedTicketsResult,
+  type AppConfig,
+  type ConversationGraph,
+  type LogEvent,
+  type MessageDetail,
+  type MessageSummary,
+  type RelatedTicketsResult,
 } from "../api/types";
 import {
   extractProblemDetails,
@@ -154,25 +160,52 @@ export const MessageDetailView: React.FC<{
     useState<RelatedTicketsResult | null>(null);
   const [ticketsLoading, setTicketsLoading] = useState(false);
 
-  const loadDetail = async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const d = await getMessage(messageId);
-      setDetail(d);
-    } catch (e) {
-      setError(extractProblemDetails(e));
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
+  // Reset per-message state during render whenever the message or the refresh
+  // token changes, instead of synchronously inside the fetch effect.
+  const [prevDetailDeps, setPrevDetailDeps] = useState({
+    messageId,
+    refreshToken,
+  });
+  if (
+    prevDetailDeps.messageId !== messageId ||
+    prevDetailDeps.refreshToken !== refreshToken
+  ) {
+    setPrevDetailDeps({ messageId, refreshToken });
     setLogs(null);
     setFlowGraph(null);
     setTicketsResult(null);
-    loadDetail();
-  }, [messageId, refreshToken]);
+    setLoading(true);
+    setError(null);
+  }
+
+  // State is only updated from promise callbacks, so this is safe to start
+  // from an effect.
+  const fetchDetail = useCallback(
+    () =>
+      getMessage(messageId)
+        .then(
+          (d) => {
+            setDetail(d);
+          },
+          (e: unknown) => {
+            setError(extractProblemDetails(e));
+          }
+        )
+        .finally(() => {
+          setLoading(false);
+        }),
+    [messageId]
+  );
+
+  useEffect(() => {
+    void fetchDetail();
+  }, [fetchDetail, refreshToken]);
+
+  const loadDetail = () => {
+    setLoading(true);
+    setError(null);
+    void fetchDetail();
+  };
 
   const isFailedOrHasException = useMemo(() => {
     if (!detail) return false;
@@ -183,83 +216,134 @@ export const MessageDetailView: React.FC<{
     );
   }, [detail]);
 
-  // Reset tab if switching to a message without exception/tickets
-  useEffect(() => {
-    if (!detail) return;
-    if (
-      (activeTab === "exception" || activeTab === "tickets") &&
-      !isFailedOrHasException
-    ) {
-      setActiveTab("overview");
-    }
-  }, [detail, isFailedOrHasException, activeTab]);
+  // Reset tab if switching to a message without exception/tickets (adjusted
+  // during render rather than in an effect).
+  const activeTabUnavailable =
+    detail !== null &&
+    (activeTab === "exception" || activeTab === "tickets") &&
+    !isFailedOrHasException;
+  if (activeTabUnavailable) {
+    setActiveTab("overview");
+  }
 
-  // Lazy load tab data when selected
-  const loadTabLogs = async () => {
+  // Lazy load tab data when a tab is selected or the message detail changes.
+  // Entering the loading state happens here during render; the effects below
+  // then perform the fetch whenever a tab's loading flag turns on (this also
+  // covers the Retry buttons, which just set the flag).
+  const [prevLazyDeps, setPrevLazyDeps] = useState({ activeTab, detail });
+  if (
+    !activeTabUnavailable &&
+    (prevLazyDeps.activeTab !== activeTab || prevLazyDeps.detail !== detail)
+  ) {
+    setPrevLazyDeps({ activeTab, detail });
+    if (detail) {
+      if (activeTab === "logs" && logs === null && !logsLoading) {
+        setLogsLoading(true);
+        setLogsError(null);
+      } else if (
+        activeTab === "flow" &&
+        flowGraph === null &&
+        !flowLoading &&
+        detail.conversationId
+      ) {
+        setFlowLoading(true);
+        setFlowError(null);
+      } else if (
+        activeTab === "tickets" &&
+        ticketsResult === null &&
+        !ticketsLoading
+      ) {
+        setTicketsLoading(true);
+      }
+    }
+  }
+
+  const fetchTabLogs = useEffectEvent(() => {
+    if (!detail) return;
+    void getLogs({
+      messageId: detail.messageId,
+      conversationId: detail.conversationId || undefined,
+    })
+      .then(
+        (data) => {
+          setLogs(data);
+        },
+        (e: unknown) => {
+          setLogsError(extractProblemDetails(e));
+        }
+      )
+      .finally(() => {
+        setLogsLoading(false);
+      });
+  });
+
+  const fetchTabFlow = useEffectEvent(() => {
+    if (!detail?.conversationId) return;
+    void getConversation(detail.conversationId)
+      .then(
+        (g) => {
+          setFlowGraph(g);
+        },
+        (e: unknown) => {
+          setFlowError(extractProblemDetails(e));
+        }
+      )
+      .finally(() => {
+        setFlowLoading(false);
+      });
+  });
+
+  const fetchTabTickets = useEffectEvent(() => {
+    if (!detail) return;
+    void getRelatedTickets({ messageId: detail.id })
+      .then(
+        (res) => {
+          setTicketsResult(res);
+        },
+        (e: unknown) => {
+          const prob = extractProblemDetails(e);
+          setTicketsResult({
+            enabled: true,
+            ok: false,
+            error: prob.detail,
+            tickets: [],
+            truncated: false,
+          });
+        }
+      )
+      .finally(() => {
+        setTicketsLoading(false);
+      });
+  });
+
+  useEffect(() => {
+    if (logsLoading) fetchTabLogs();
+  }, [logsLoading]);
+
+  useEffect(() => {
+    if (flowLoading) fetchTabFlow();
+  }, [flowLoading]);
+
+  useEffect(() => {
+    if (ticketsLoading) fetchTabTickets();
+  }, [ticketsLoading]);
+
+  const loadTabLogs = () => {
     if (!detail) return;
     setLogsLoading(true);
     setLogsError(null);
-    try {
-      const data = await getLogs({
-        messageId: detail.messageId,
-        conversationId: detail.conversationId || undefined,
-      });
-      setLogs(data);
-    } catch (e) {
-      setLogsError(extractProblemDetails(e));
-    } finally {
-      setLogsLoading(false);
-    }
   };
 
-  const loadTabFlow = async () => {
+  const loadTabFlow = () => {
     if (!detail?.conversationId) return;
     setFlowLoading(true);
     setFlowError(null);
-    try {
-      const g = await getConversation(detail.conversationId);
-      setFlowGraph(g);
-    } catch (e) {
-      setFlowError(extractProblemDetails(e));
-    } finally {
-      setFlowLoading(false);
-    }
   };
 
-  const loadTabTickets = async () => {
+  const loadTabTickets = () => {
     if (!detail) return;
     setTicketsLoading(true);
-    try {
-      const res = await getRelatedTickets({ messageId: detail.id });
-      setTicketsResult(res);
-    } catch (e) {
-      const prob = extractProblemDetails(e);
-      setTicketsResult({
-        enabled: true,
-        ok: false,
-        error: prob.detail,
-        tickets: [],
-        truncated: false,
-      });
-    } finally {
-      setTicketsLoading(false);
-    }
   };
-
-  useEffect(() => {
-    if (!detail) return;
-    if (activeTab === "logs" && logs === null && !logsLoading) {
-      loadTabLogs();
-    } else if (activeTab === "flow" && flowGraph === null && !flowLoading) {
-      loadTabFlow();
-    } else if (
-      activeTab === "tickets" &&
-      ticketsResult === null &&
-      !ticketsLoading
-    ) {
-      loadTabTickets();
-    }
-  }, [activeTab, detail]);
 
   const filteredHeaders = useMemo(() => {
     if (!detail) return [];
@@ -495,7 +579,7 @@ export const MessageDetailView: React.FC<{
                           type="button"
                           onClick={() => {
                             if (onClose) onClose();
-                            navigate(`/conversations/${detail.conversationId}`);
+                            void navigate(`/conversations/${detail.conversationId}`);
                           }}
                           className="text-brand-purple hover:underline inline-flex items-center gap-1 cursor-pointer truncate"
                         >
@@ -562,7 +646,7 @@ export const MessageDetailView: React.FC<{
                             type="button"
                             onClick={() => {
                               if (onClose) onClose();
-                              navigate(`/sagas/${sId}`);
+                              void navigate(`/sagas/${sId}`);
                             }}
                             className="inline-flex items-center gap-1 font-mono text-xs font-medium text-brand-purple hover:underline cursor-pointer"
                           >
@@ -861,7 +945,7 @@ export const MessageDetailView: React.FC<{
                     onSelectMessage={(id) => onSelectMessage(id)}
                     onSelectSaga={(sId) => {
                       if (onClose) onClose();
-                      navigate(`/sagas/${sId}`);
+                      void navigate(`/sagas/${sId}`);
                     }}
                     heightClass="h-[460px]"
                   />
