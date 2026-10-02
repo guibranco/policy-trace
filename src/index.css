@@ -1,0 +1,155 @@
+@import "tailwindcss";
+@import "@xyflow/react/dist/style.css";
+
+:root {
+  --brand-purple: #79378B;
+  --brand-purple-dark: #5e2b6c;
+  --brand-lime: #93CD3F;
+  --brand-lime-dark: #76a432;
+  --bg: #F8F5FA;
+
+  --surface: #FFFFFF;
+  --surface-subtle: #F3EFF6;
+  --surface-hover: #EFE9F4;
+  --surface-elevated: #FFFFFF;
+  --border-subtle: #E2DCE7;
+  --border-strong: #C9BFD1;
+
+  --text-primary: #18131C;
+  --text-secondary: #4A4152;
+  --text-muted: #6E6378;
+  --text-on-purple: #FFFFFF;
+  --text-on-lime: #141A0C;
+
+  /* Semantic status colours (clearly distinguishable from brand lime) */
+  --status-success-bg: #E6F6F0;
+  --status-success-text: #0B5E42;
+  --status-success-border: #99DEC5;
+
+  --status-failed-bg: #FDECEC;
+  --status-failed-text: #A61B1B;
+  --status-failed-border: #F5B3B3;
+
+  --status-retry-bg: #FEF5E6;
+  --status-retry-text: #8F4F00;
+  --status-retry-border: #F7CE86;
+
+  --status-archived-bg: #EFEFEF;
+  --status-archived-text: #4A4A4A;
+  --status-archived-border: #CFCFCF;
+
+  /* Environment badge colours */
+  --env-int-bg: #E6E4E9;
+  --env-int-text: #2E2936;
+  --env-stg-bg: #FDE68A;
+  --env-stg-text: #593900;
+  --env-prod-bg: #DC2626;
+  --env-prod-text: #FFFFFF;
+
+  /* Log level semantic tokens */
+  --log-fatal-bg: #7F1D1D;
+  --log-fatal-text: #FFFFFF;
+  --log-error-bg: #FDECEC;
+  --log-error-text: #A61B1B;
+  --log-warn-bg: #FEF5E6;
+  --log-warn-text: #8F4F00;
+  --log-info-bg: #EBF3FE;
+  --log-info-text: #154B99;
+  --log-debug-bg: #EFEFEF;
+  --log-debug-text: #4F4F4F;
+}
+
+.dark {
+  --brand-purple: #9B53AF;
+  --brand-purple-dark: #79378B;
+  --brand-lime: #93CD3F;
+  --brand-lime-dark: #A8DE59;
+  --bg: #120E16;
+
+  --surface: #1B1521;
+  --surface-subtle: #231C2B;
+  --surface-hover: #2C2336;
+  --surface-elevated: #241D2C;
+  --border-subtle: #32283D;
+  --border-strong: #4A3B59;
+
+  --text-primary: #F3EFF6;
+  --text-secondary: #C6BBD0;
+  --text-muted: #9688A3;
+  --text-on-purple: #FFFFFF;
+  --text-on-lime: #141A0C;
+
+  --status-success-bg: #083827;
+  --status-success-text: #6EE7B7;
+  --status-success-border: #115E43;
+
+  --status-failed-bg: #451212;
+  --status-failed-text: #FCA5A5;
+  --status-failed-border: #7F1D1D;
+
+  --status-retry-bg: #422605;
+  --status-retry-text: #FCD34D;
+  --status-retry-border: #784509;
+
+  --status-archived-bg: #27272A;
+  --status-archived-text: #D4D4D8;
+  --status-archived-border: #3F3F46;
+
+  --env-int-bg: #322B3B;
+  --env-int-text: #E5E0EB;
+  --env-stg-bg: #784509;
+  --env-stg-text: #FDE68A;
+  --env-prod-bg: #DC2626;
+  --env-prod-text: #FFFFFF;
+
+  --log-fatal-bg: #991B1B;
+  --log-fatal-text: #FFFFFF;
+  --log-error-bg: #451212;
+  --log-error-text: #FCA5A5;
+  --log-warn-bg: #422605;
+  --log-warn-text: #FCD34D;
+  --log-info-bg: #12294A;
+  --log-info-text: #93C5FD;
+  --log-debug-bg: #27272A;
+  --log-debug-text: #D4D4D8;
+}
+
+@theme {
+  --color-brand-purple: var(--brand-purple);
+  --color-brand-purple-dark: var(--brand-purple-dark);
+  --color-brand-lime: var(--brand-lime);
+  --color-brand-lime-dark: var(--brand-lime-dark);
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-subtle: var(--surface-subtle);
+  --color-surface-hover: var(--surface-hover);
+  --color-surface-elevated: var(--surface-elevated);
+  --color-border-subtle: var(--border-subtle);
+  --color-border-strong: var(--border-strong);
+  --color-text-primary: var(--text-primary);
+  --color-text-secondary: var(--text-secondary);
+  --color-text-muted: var(--text-muted);
+  --color-text-on-purple: var(--text-on-purple);
+  --color-text-on-lime: var(--text-on-lime);
+
+  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+  --font-mono: "JetBrains Mono", "Cascadia Code", "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+}
+
+body {
+  background-color: var(--bg);
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  margin: 0;
+  padding: 0;
+  -webkit-font-smoothing: antialiased;
+}
+
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+
+/* React Flow dark/light adaptation using CSS variables */
+.react-flow__attribution {
+  display: none;
+}
