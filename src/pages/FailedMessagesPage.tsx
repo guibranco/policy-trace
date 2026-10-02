@@ -41,28 +41,52 @@ export const FailedMessagesPage: React.FC = () => {
     return ["archived"];
   }, [activeTab]);
 
-  const fetchFailedMessages = useCallback(async () => {
+  // Clear the selection and reset to the loading state during render whenever
+  // the tab or the global refresh token changes, instead of inside the effect.
+  const [prevDeps, setPrevDeps] = useState({ targetStatuses, refreshVersion });
+  if (
+    prevDeps.targetStatuses !== targetStatuses ||
+    prevDeps.refreshVersion !== refreshVersion
+  ) {
+    setPrevDeps({ targetStatuses, refreshVersion });
+    setSelectedIds(new Set());
     setLoading(true);
     setError(null);
-    try {
-      const res = await getMessages({
+  }
+
+  // State is only updated from promise callbacks, so this is safe to start
+  // from an effect.
+  const loadFailedMessages = useCallback(
+    () =>
+      getMessages({
         status: targetStatuses,
         pageSize: 100,
         sort: "timeSent",
         direction: "desc",
-      });
-      setMessages(res.items);
-    } catch (e) {
-      setError(extractProblemDetails(e));
-    } finally {
-      setLoading(false);
-    }
-  }, [targetStatuses]);
+      })
+        .then(
+          (res) => {
+            setMessages(res.items);
+          },
+          (e: unknown) => {
+            setError(extractProblemDetails(e));
+          }
+        )
+        .finally(() => {
+          setLoading(false);
+        }),
+    [targetStatuses]
+  );
 
   useEffect(() => {
-    setSelectedIds(new Set());
-    fetchFailedMessages();
-  }, [fetchFailedMessages, refreshVersion]);
+    void loadFailedMessages();
+  }, [loadFailedMessages, refreshVersion]);
+
+  const fetchFailedMessages = () => {
+    setLoading(true);
+    setError(null);
+    void loadFailedMessages();
+  };
 
   const filteredMessages = useMemo(() => {
     if (!searchQuery.trim()) return messages;

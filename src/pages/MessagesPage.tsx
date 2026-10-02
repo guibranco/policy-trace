@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import {
   Archive,
@@ -43,9 +43,13 @@ export const MessagesPage: React.FC = () => {
   // Read URL query params
   const endpoint = searchParams.get("endpoint") || "";
   const rawStatus = searchParams.get("status") || "";
-  const selectedStatuses = rawStatus
-    ? rawStatus.split(",").filter((s) => ALL_STATUSES.includes(s as MessageStatus))
-    : [];
+  const selectedStatuses = useMemo(
+    () =>
+      rawStatus
+        ? rawStatus.split(",").filter((s) => ALL_STATUSES.includes(s as MessageStatus))
+        : [],
+    [rawStatus]
+  );
   const q = searchParams.get("q") || "";
   const page = parseInt(searchParams.get("page") || "1", 10) || 1;
   const pageSize = parseInt(searchParams.get("pageSize") || "20", 10) || 20;
@@ -63,9 +67,13 @@ export const MessagesPage: React.FC = () => {
   // Local search draft
   const [searchDraft, setSearchDraft] = useState(q);
 
-  useEffect(() => {
+  // Keep the draft in sync when the URL query changes (adjusted during render
+  // rather than in an effect).
+  const [prevQ, setPrevQ] = useState(q);
+  if (prevQ !== q) {
+    setPrevQ(q);
     setSearchDraft(q);
-  }, [q]);
+  }
 
   const updateParam = useCallback(
     (key: string, val: string | null) => {
@@ -84,11 +92,30 @@ export const MessagesPage: React.FC = () => {
     [searchParams, setSearchParams]
   );
 
-  const fetchMessages = useCallback(async () => {
+  // Reset to the loading state during render whenever the query or the global
+  // refresh token changes, instead of synchronously inside the fetch effect.
+  const requestKey = JSON.stringify([
+    endpoint,
+    rawStatus,
+    q,
+    page,
+    pageSize,
+    sort,
+    direction,
+    refreshVersion,
+  ]);
+  const [prevRequestKey, setPrevRequestKey] = useState(requestKey);
+  if (prevRequestKey !== requestKey) {
+    setPrevRequestKey(requestKey);
     setLoading(true);
     setError(null);
-    try {
-      const res = await getMessages({
+  }
+
+  // State is only updated from promise callbacks, so this is safe to start
+  // from an effect.
+  const loadMessages = useCallback(
+    () =>
+      getMessages({
         endpoint: endpoint || undefined,
         status: selectedStatuses.length > 0 ? selectedStatuses : undefined,
         q: q || undefined,
@@ -96,18 +123,30 @@ export const MessagesPage: React.FC = () => {
         pageSize,
         sort,
         direction,
-      });
-      setPagedData(res);
-    } catch (e) {
-      setError(extractProblemDetails(e));
-    } finally {
-      setLoading(false);
-    }
-  }, [endpoint, rawStatus, q, page, pageSize, sort, direction]);
+      })
+        .then(
+          (res) => {
+            setPagedData(res);
+          },
+          (e: unknown) => {
+            setError(extractProblemDetails(e));
+          }
+        )
+        .finally(() => {
+          setLoading(false);
+        }),
+    [endpoint, selectedStatuses, q, page, pageSize, sort, direction]
+  );
 
   useEffect(() => {
-    fetchMessages();
-  }, [fetchMessages, refreshVersion]);
+    void loadMessages();
+  }, [loadMessages, refreshVersion]);
+
+  const fetchMessages = () => {
+    setLoading(true);
+    setError(null);
+    void loadMessages();
+  };
 
   const toggleStatus = (st: MessageStatus) => {
     let next: string[];
@@ -418,9 +457,9 @@ export const MessagesPage: React.FC = () => {
                         {m.conversationId ? (
                           <button
                             type="button"
-                            onClick={() =>
-                              navigate(`/conversations/${m.conversationId}`)
-                            }
+                            onClick={() => {
+                              void navigate(`/conversations/${m.conversationId}`);
+                            }}
                             className="inline-flex items-center gap-1 text-brand-purple hover:underline cursor-pointer truncate max-w-[180px]"
                           >
                             <GitBranch className="w-3 h-3 shrink-0" />

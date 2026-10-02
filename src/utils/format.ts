@@ -92,7 +92,11 @@ export function extractProblemDetails(err: unknown): ProblemDetails {
   }
   return {
     title: "Unexpected Error",
-    detail: String(err || "Unknown error"),
+    detail: !err
+      ? "Unknown error"
+      : typeof err === "object"
+      ? Object.prototype.toString.call(err)
+      : String(err),
     status: 500,
   };
 }

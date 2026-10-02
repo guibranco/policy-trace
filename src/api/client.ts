@@ -48,7 +48,9 @@ export function setOperatorName(name: string): void {
   }
 }
 
-function buildQuery(params: Record<string, unknown>): string {
+type QueryValue = string | number | boolean | string[] | null | undefined;
+
+function buildQuery(params: Record<string, QueryValue>): string {
   const sp = new URLSearchParams();
   for (const [k, v] of Object.entries(params)) {
     if (v === undefined || v === null || v === "") continue;
@@ -92,12 +94,13 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
       status: res.status,
     };
     try {
-      const json = await res.json();
+      const json: unknown = await res.json();
       if (json && typeof json === "object") {
+        const body = json as Partial<ProblemDetails>;
         problem = {
-          title: json.title || problem.title,
-          detail: json.detail || problem.detail,
-          status: json.status || res.status,
+          title: body.title || problem.title,
+          detail: body.detail || problem.detail,
+          status: body.status || res.status,
         };
       }
     } catch {

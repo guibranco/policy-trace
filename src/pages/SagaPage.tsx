@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import {
   ChevronDown,
@@ -28,16 +28,16 @@ function computeJsonDiff(
   parsed: Record<string, unknown>;
   diffKeys: Set<string>;
 } {
-  let curr: Record<string, unknown> = {};
+  let curr: Record<string, unknown>;
   let prev: Record<string, unknown> = {};
   try {
-    curr = JSON.parse(currJsonStr);
+    curr = JSON.parse(currJsonStr) as Record<string, unknown>;
   } catch {
     curr = { raw: currJsonStr };
   }
   if (prevJsonStr) {
     try {
-      prev = JSON.parse(prevJsonStr);
+      prev = JSON.parse(prevJsonStr) as Record<string, unknown>;
     } catch {
       prev = { raw: prevJsonStr };
     }
@@ -64,26 +64,47 @@ export const SagaPage: React.FC = () => {
 
   const [expandedSteps, setExpandedSteps] = useState<Record<number, boolean>>({});
 
-  const fetchSaga = async () => {
+  // Reset to the loading state during render whenever the saga or the global
+  // refresh token changes, instead of synchronously inside the fetch effect.
+  const [prevDeps, setPrevDeps] = useState({ sagaId, refreshVersion });
+  if (prevDeps.sagaId !== sagaId || prevDeps.refreshVersion !== refreshVersion) {
+    setPrevDeps({ sagaId, refreshVersion });
     setLoading(true);
     setError(null);
-    try {
-      const data = await getSaga(sagaId);
-      setSaga(data);
-      // Auto expand the last step
-      if (data.changes.length > 0) {
-        setExpandedSteps({ [data.changes.length - 1]: true });
-      }
-    } catch (e) {
-      setError(extractProblemDetails(e));
-    } finally {
-      setLoading(false);
-    }
-  };
+  }
+
+  // State is only updated from promise callbacks, so this is safe to start
+  // from an effect.
+  const loadSaga = useCallback(
+    () =>
+      getSaga(sagaId)
+        .then(
+          (data) => {
+            setSaga(data);
+            // Auto expand the last step
+            if (data.changes.length > 0) {
+              setExpandedSteps({ [data.changes.length - 1]: true });
+            }
+          },
+          (e: unknown) => {
+            setError(extractProblemDetails(e));
+          }
+        )
+        .finally(() => {
+          setLoading(false);
+        }),
+    [sagaId]
+  );
 
   useEffect(() => {
-    fetchSaga();
-  }, [sagaId, refreshVersion]);
+    void loadSaga();
+  }, [loadSaga, refreshVersion]);
+
+  const fetchSaga = () => {
+    setLoading(true);
+    setError(null);
+    void loadSaga();
+  };
 
   const isCompleted =
     saga?.changes.some((c) => c.status === "completed") ?? false;
@@ -151,7 +172,9 @@ export const SagaPage: React.FC = () => {
         <div className="flex items-center gap-3">
           <button
             type="button"
-            onClick={() => navigate(-1)}
+            onClick={() => {
+              void navigate(-1);
+            }}
             className="p-1 rounded hover:bg-surface-hover text-text-secondary cursor-pointer"
             title="Go back"
           >
