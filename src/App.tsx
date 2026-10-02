@@ -10,7 +10,7 @@ import { SagaPage } from "./pages/SagaPage";
 
 export default function App() {
   return (
-    <BrowserRouter>
+    <BrowserRouter basename={import.meta.env.BASE_URL}>
       <AppProvider>
         <AppShell>
           <Routes>
