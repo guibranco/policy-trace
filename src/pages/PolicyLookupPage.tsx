@@ -1236,10 +1236,10 @@ export const PolicyLookupPage: React.FC = () => {
                   return (
                     <div
                       key={entry.id}
-                      data-testid={`timeline-row-${msg.id}`}
                       className="bg-surface"
                     >
                       <div
+                        data-testid={`timeline-row-${msg.id}`}
                         onClick={() => openMessageDrawer(msg.id)}
                         className="px-3.5 py-2.5 hover:bg-surface-hover transition-colors cursor-pointer flex items-center justify-between gap-3 text-xs"
                       >
